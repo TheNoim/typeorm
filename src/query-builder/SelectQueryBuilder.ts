@@ -51,7 +51,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
      */
     getQuery(): string {
         let sql = this.createSelectExpression();
-        sql += this.createJoinExpression();
+        if (this.expressionMap.joinPosition < 0) sql += this.createJoinExpression();
         sql += this.createWhereExpression();
         sql += this.createGroupByExpression();
         sql += this.createHavingExpression();
@@ -223,6 +223,19 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.expressionMap.setMainAlias(alias);
 
         return (this as any) as SelectQueryBuilder<T>;
+    }
+
+    /**
+     * Change the position of joins.
+     * Default: Change the join position to the first from clause.
+     */
+    joinAfterIndex(index: number | boolean = 0) {
+        if (typeof index === "number") {
+            this.expressionMap.joinPosition = index;
+        } else {
+            this.expressionMap.joinPosition = -1;
+        }
+        return this;
     }
 
     /**
@@ -1420,11 +1433,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // create a selection query
         const froms = this.expressionMap.aliases
             .filter(alias => alias.type === "from" && (alias.tablePath || alias.subQuery))
-            .map(alias => {
+            .map((alias, index) => {
                 if (alias.subQuery)
                     return alias.subQuery + " " + this.escape(alias.name);
 
-                return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
+                let result = this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
+                if (this.expressionMap.joinPosition > -1 && index === this.expressionMap.joinPosition) {
+                    result += this.createJoinExpression();
+                }
+                return result;
             });
 
         const select = this.createSelectDistinctExpression();

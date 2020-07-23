@@ -271,6 +271,12 @@ export class QueryExpressionMap {
      */
     nativeParameters: ObjectLiteral = {};
 
+    /**
+     * Where to put the join expression.
+     * -1 means default position.
+     */
+    joinPosition: number = -1;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -429,6 +435,7 @@ export class QueryExpressionMap {
         map.callListeners = this.callListeners;
         map.useTransaction = this.useTransaction;
         map.nativeParameters = Object.assign({}, this.nativeParameters);
+        map.joinPosition = this.joinPosition;
         return map;
     }
 
